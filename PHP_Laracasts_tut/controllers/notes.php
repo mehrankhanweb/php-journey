@@ -9,4 +9,4 @@
 
 
 
-require 'views/.view.php';
+require 'views/notes.view.php';
