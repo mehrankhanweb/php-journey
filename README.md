@@ -3,5 +3,5 @@ A repository to track my journey in learning PHP. This repository contains code 
 # Table of Contents
 
 - [MVC Implementation and Simple Routing in PHP](https://github.com/mehrankhanweb/php-journey/wiki/MVC-Implementation-and-Simple-Routing)
--  [MVC Implementation and Simple Routing in PHP](https://github.com/mehrankhanweb/php-journey/wiki/dynamic-styling-of-navigation-tabs-and-banner-and-debugging-function)
+- [Navigation dynamic styling, dynamic banner content and dd function](https://github.com/mehrankhanweb/php-journey/wiki/dynamic-styling-of-navigation-tabs-and-banner-and-debugging-function)
 
