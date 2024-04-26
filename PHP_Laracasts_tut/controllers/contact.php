@@ -1,5 +1,5 @@
 <?php
-
+$heading = "Contact";
 
 
 
