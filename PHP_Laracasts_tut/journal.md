@@ -1,208 +1,170 @@
-I learnt how to interact with mysql, using TablePlus I created notes and users tables. Each note is created by some user, so learnt about foreign key concept. also learnt about id which is primary key.
 
-I learnt PDO methods and features that it provides out of the box to interact with databases.
-Connection Handling:
-
-Constructor: Creates a new PDO instance representing a connection to a database.
-setAttribute(): Sets attributes on the database handle, such as error handling mode, fetch mode, etc.
-exec(): Executes an SQL statement and returns the number of affected rows.
-query(): Executes an SQL statement and returns a PDOStatement object representing a result set. it combines the preparation and execution of an SQL statement into a single function call.
-
-Prepared Statements:
-
-prepare(): Prepares an SQL statement for execution and returns a PDOStatement object.
-bindParam() / bindValue(): Binds a parameter to the specified variable name or value in a prepared statement.
-execute(): Executes a prepared statement.
-fetch() / fetchAll(): Fetches the next row from a result set as an associative array or returns an array containing all of the result set rows.
-
-```php
-$dsn = "mysql:host=localhost;port=3306;dbname=myapp;user=root;password=;charset=utf8mb4";
-$pdo = new PDO($dsn);
-$statement = $pdo->prepare("select * from notes");
-$statement->execute();
-$posts = $statement->fetchAll(PDO::FETCH_ASSOC);
-foreach($posts as $post){
-    echo "<li>" . $post['body'] . "</li>";
-}
-```
-I refactored above so it is more friendly to use and converted above into a custom class called Database.
-
-```php
-class Database{
-	public function query($query){
-	$dsn = "mysql:host=localhost;port=3306;dbname=myapp;user=root;password=;charset=utf8mb4";
-	$pdo = new PDO($dsn);
-    //  new keyword means an object will be returned from PDO class.
-	$statement = $pdo->prepare($query);
-	$statement->execute();
-	return $statement->fetchAll(PDO::FETCH_ASSOC);
-	}
-}
-```
-I want to add this question in my notes
-What is query method in Database class doing?
-Answer is: It is used execute sql queries and return a PDOStatement object.
+$notes = $db->query("select * from notes where id=1")->fetch();
+using fetch is appropriate as it is a single result and I don't need a list or collection.
 
 
-- it would be nice if I build up pdo instance one time because in real life you need to execute hundreds of queries. so I use one of the php magic methods called construct, it automatically runs when new instance is created. that is the perfect place to initialize the instance.
+As you can imagine in real life, we will not be hardcoding id instead the user will click on note with an id of 1 or other post with an id of 2,
 
-I rewrote Database class
+A query string is part of the full query, or URL, which allows us to send information using parameters as key-value pairs. A query string typically follows a ? in the URL like http://localhost:3000/?id=2
 
-```php
-class Database{
-	public function __construct(){
+Instead of creating a separate page for each note, you can have one page that fetches data based on the ID passed through the query string.
 
-		$dsn = "mysql:host=localhost;port=3306;dbname=myapp;user=root;password=;charset=utf8mb4";
-		$pdo = new PDO($dsn);
-	}
-	public function query($query){
+Consider a list of notes on a page. When a user clicks on one of the notes, they are redirected to a page with more information about that note. This is what we are going to achieve next.
 
-	$statement = $pdo->prepare($query);
-	$statement->execute();
-	return $statement->fetchAll(PDO::FETCH_ASSOC);
-	}
-    }
-```
+Next step is to fetch all relevant notes from database.
 
-# Now I am facing issue in query method we are expected to have access to that pdo variable but it is moved to different scope now, we moved it out of query method into __construct function.
+$notes = $db->query("select * from notes where user_id=1")->fetchAll();
 
-Solution is : right above construct lets define an instance property $connection and cool thing about that is anywhere in this class, I can access this property.
+user_id =1 will be hardcoded for now because Remember we haven't reviewed authentication yet, but we will cover it soon.
+
+Foreign key references to Primary key in Referenced Table Change user_id to 1 before creating foreign key constraint, as by default it is 0.
+Create foreign key constraint on notes table, because every note should be assigned to some user, Also
+What happens when user is deleted and he has bunch of notes in notes table.
+Should these notes be deleted as well, or should the user be restricted from being deleted.
+we got ON Update and On Delete hooks and these hooks have some options,
+Cascade → delete those related records if user deleted.
+Restrict → restrict the user to be deleted.
+Different applications will have different requirement.
+Test out by making few records in notes and then delete the user to see if all records in notes are cascaded by hitting command + r (refresh).
+So foreign key and foreign key constraint maintain our database consistency.
 
 
+we need this for now but we make them available throughout application soon.
+$config = require "config.php";
+$db = new Database($config['database'], 'root','');
 
-that brings me to learn about $this so I learnt that $this is a special variable used within class methods to refer to the current instance of the class. It acts as a pointer to the object on which the method is being called, allowing you to access the instance's properties and methods.
-must add this example in notes.
-Example
+
+once i run this in notes.php
+$notes = $db->query("select * from notes where id=1")->fetchAll();
+
+I can access $notes variable in notes.view.php file.
+
+<?php foreach($notes as $note): ?>
+        <li><a href="#" class="text-blue-500 hover:underline"><?= $note['body'] ?></li></a>
+        <?php endforeach; ?>
+I used shorthand syntax for foreach above. notice the : colon.
+
+But NOW what Should Happen When user clicks on one of these notes? Where Should we direct them? (must include in wiki notes)
+
+In the future we will learn how to do /notes/unique-slug-for-the-note in the address bar, which will look something like below.
+
+<li><a href="/notes/unique-slug-for-the-note" class="text-blue-500 hover:underline"><?= $note['body'] ?></li></a>
+
+But right now our router does not allow this, so we keep it simple.
+
+we are opting for a simpler approach where you pass the note ID through the query string, like /note?id=1
+It's nice and easy way to get started!
+
+Inside foreach loop we make note id dynamic like below.
+href="/note?id=<?= $note['id'] ?>"
+I have new controller and view file for note page, make sure you register that endpoint with router.
 
 ```php
-class Person {
-    public $name;
-
-    function __construct( $name ) {
-        $this->name = $name;
-    }
-};
-
-$jack = new Person('Jack');
-echo $jack->name;
-```
-must include this question and answer in notes
-Question: why can't you just call $name from inside the class and need to use $this?
-
-Answer: $this->name is saying grab the name property of this class. just $name is saying use a variable called $name. So that's why our __construct passes $name as a variable and sets $this->name = $name.
-We're saying set the value of our name inside of this object equal to the value we passed in as $name
-
-Since I don't have access to $pdo, I will not store pdo connection in $pdo variable, instead save pdo connection in a variable which you have access anywhere in the class, which is $connection
-
-I need to refactor this piece of code return $statement->fetchAll(PDO::FETCH_ASSOC);
-Here's Why??
-
-What If I were trying to fetch a single post,
-fetchAll gives all results and every result will be in its own array, so if you want the first result and 'title' property, that's how you would do it.
-
-dd([$post[0]['title']);
-
-If I change it to return $statement->fetch(PDO::FETCH_ASSOC); (changed fetchAll to fetch).
-
-I will get only one result and will have single level of array, and I can access it like this.
-
-dd([$post['title']);
-
-Whether we call fetch or fetchAll, it needs to be dynamic, I should be incharge of what I want to call. We just return $statement instead of $statement->fetchAll(PDO::FETCH_ASSOC)
-
-A lot of programming consists of taking code you have that already works but you don't stop there, you keep iterating on that same code over and over until it doesn't just work but it is also beautiful and flexible to work with.
-With that in mind, we look at the Database class , are there any ways to make it more flexible?
-I think answer is YES, Have a look at this $dsn here
-$dsn = mysql:host=localhost;port=3306;dbname=myapp;user=root;password=;
-We have hardcoded many of the options here like host, port name and they will certainly change depending upon environment, like production environment, these are sort of things we need to think about, We are focuing on this code
-
-__construct method of PDO class accepts $dsn, but we can also pass $username, $password and $options.
-
-we can now Remove PDO::FETCH_ASSOC and declare as an $option, when we instantiate PDO class.
-
-$this->connection = new PDO($dsn, 'root','',[
-	PDO::ATTR_DEFAULT_FETCH_MODE =>PDO::FETCH_ASSOC
-])
-
-//Now I can remove root and password from $dsn
-
-$dsn = mysql:host=localhost;port=3306;dbname=myapp;charset=utf8mb4";
-
-that leaves the host, port and dbname, that also needs to be dynamic. We can put that in a $config array.
-$config = [
-	'host'=>'localhost',
-	'port'=> 3306,
-	'dbname'=>'myapp',
-	'charset'=>'utf8mb4'
+$routes = [
+    '/'=>'controllers/index.php',
+    '/about'=>'controllers/about.php',
+    '/contact'=>'controllers/contact.php',
+    '/notes'=>'controllers/notes.php',
+    '/note'=>'controllers/note.php'
 ];
+```
+So Far We have listed all the notes and Every note has specific id that We have provided throug URL
 
-To clean up little bit more I am going to use http_build_query($data);
- //Returns or generates a URL-encoded query string from associative array. so my dsn looks like this
+Next Task clicking on that note should take me to /note?id=idOfTheNote
 
- $dsn = 'mysql:' . http_build_query($config, '', ';');
+What does that tell you?
+It is clear that In the note.php file, We need to retrieve the note ID from the query string using $_GET['id']
 
- In a new file config.php, paste it in but instead of declaring variable $config, we will put keyword return. return is not exclusive for function calls, it can also be used in a regular file.
- // Database.php
-class Database
-{
-    public $connection;
-    public function __construct($config)
-    {
-    $dsn = "mysql:" . http_build_query($config, '', ';');
-    $this->connection = new PDO($dsn, 'root', '', [PDO::ATTR_DEFAULT_FETCH_MODE =>PDO::FETCH_ASSOC]);
-    }
+After retrieving the id , What Are We gonna do with that id? What Do You Think?
 
-    public function query($query)
+Just execute the sql query using that id so we can display it.
+
+
+Remember You again need access to the database connection to execute SQL queries and fetch the details of the specific note, but this time you need to fetch that specific id that you just retrieved with `$_GET` So you require this code in note.
+
+```php
+$config = require('config.php');
+$db = new Database($config['database'], 'root','' );
+```
+
+`$notes = $db->query('select * from notes where id = $_GET['id'])->fetch();`
+
+With these changes, when a user clicks on a note, they will be directed to the note.php page with the corresponding note ID passed through the query string.
+
+The note.php page will then fetch and display the details of that specific note based on the provided ID.
+
+In note.view.php file
+<main>
+    <div class="mx-auto max-w-7xl py-6 sm:px-6 lg:px-8">
+    <p class="mb-6">
+    <a href="/notes" class="text-blue-500 underline">Go Back...</a>
+    </p>
+    <p>
+    <?= $note['body'] ?>
+    </p>
+    </div>
+</main>
+
+- so far so good, but there is a problem as we are inlining id as part of sql query
+
+- Inlining raw user inputs directly into SQL queries opens up the risk of SQL injection, where malicious users can manipulate SQL syntax to execute unintended commands. This could lead to unauthorized data access, data loss, or even full control of the database.
+
+
+Using prepared statements with bound parameters is the best practice to avoid these issues. Prepared statements separate SQL code from data, ensuring that user inputs are handled safely and preventing SQL injection. This approach also improves code readability and maintainability.
+
+so here is the solution, I am no longer going to inline it directly, instead I will show you two ways to format it. I will replace it with ? mark. This ? we will bind to the query.
+$query = "select * from posts where id=?";
+But Here's the key thing to understand, the query and bound parameter almost travel in two different boats, maybe that's the way to think of it.
+You will send through the query to mysql and then in a separate boat you will send through the parameters, and when you take this approach you remove any possibility of improper formatting or sql injection.
+How do I bind the parameters.
+In our Database.php Class when we call the execute method
+$statement->execute(); → This is where you can bind the parameters, and it will take the form of an array [], but this one needs to pass through here → from the following code like below.
+$posts = $db->query($query,[$id])->fetch();
+So to make it work, that [] should be dynamic. why don't we call it $params and then we accept it as part of query method signature, and we will default it to an empty []
+
+
+```php
+// this query function is inside Database custom class.
+ public function query($query, $params=[])
     {
         $statement = $this->connection->prepare($query);
-        $statement->execute();
+        $statement->execute($params);
         return $statement;
     }
-}
-// config.php
- return [
-    'host' => 'localhost',
-    'port' => 3306,
-    'dbname' => 'myapp',
-    'charset' => 'utf8mb4'
- ];
- // index.php
- require "functions.php";
-require "Database.php";
-$config = require "config.php";
-// require "router.php";
 
-$db = new Database($config);
-$posts = $db->query("select * from posts")->fetchAll();
+// when I call query method, I can bind it as second parameter like below.
+$posts = $db->query($query, [$id])->fetch();
+```
 
-foreach($posts as $post){
-echo "<li>" . $post['title'] . "</li>";
-}
+Second Method
+instead of ? mark,
+$query = "select * from posts where id=?";
+or I could use a key, starting with :(any name), in this case :id would make sense.
+Now the only difference would be I pass as an associative array, where I reference the key and the value.
+$query = "select * from posts where id=:id";
+Now you have to pass an associative array
 
-set default values if you want , because it is so common
-public function __construct($config, $username='root', $password='',[PDO::ATTR_DEFAULT_FETCH_MODE =>PDO::FETCH_ASSOC])
+$posts = $db->query($query, ['id'=>$id])->fetch();
+
+So whether you reach for ? or :id (keyed wild card parameter not sure what is it called) but it doesn't matter, choose the one you like best.
+But never ever accept user input and inline in query parameter, drill it in your head, you don't wanna do it.
+By using bound parameters, you ensure that user input is treated as data rather than executable code, making your application more secure against SQL injection vulnerabilities.
+
+I am going to use :id approach.
 
 
-Now everything is dynamic other than 'mysql:' in $dsn.   $dsn = 'mysql:' . http_build_query($config, '',';');
+so to fetch all notes on notes.php page I will do something like this
+$notes = $db->query("select * from notes where user_id= :user_id",['user_id'=>1])->fetchAll();
+And on note.php page when we fetch a specific note I will do something like this
+$note = $db->query("select * from notes where id = :id",['id'=>$id])->fetch();
 
+and in Database.php I refactored query method like this
 
-If I ever wanna change port or any other information, just go to config file and edit those.
+public function query($query, $params=[]){
 
-Remember this configuration file is not exclusive to database credentials, You can use for the entire application. With that in mind, may be we should 'key' this, like this
+	$statement = $this->connection->prepare($query);
+	$statement->execute($params);
+	return $statement;
+	}
 
-if we add key 'database' then we will use like this
-  $db = new Database($config['database']);
-
-
-  From the above discussion and code refactoring, I learned several important concepts and practices in PHP development
-
-  encapsulated the database connection logic within a class (Database), abstracting away the details of connecting to the database. This promotes cleaner and more maintainable code.
-
-  utilized the constructor (__construct) method to initialize the database connection when an instance of the Database class is created. This ensures that the connection is established automatically whenever the class is instantiated.
-
-  passed the database configuration as an argument to the constructor, allowing for greater flexibility and reusability.
-
-  ---
-push the code in __construct method to initialize the connection.
-Don't store PDO connection in variable, instead save in public property and use $this keyword.
-  ---
+    
