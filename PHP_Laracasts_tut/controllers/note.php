@@ -5,18 +5,20 @@ $heading = "Note";
 $config = require 'config.php';
 $db = new Database($config['database']);
 
-
-$note = $db->query("select * from notes where id=:id",[ 'id'=>$_GET['id']])->fetch();
-
 $currentUserId = 1;
 
-if(!$note){
-    abort(Response::NOT_FOUND);
-}
+$note = $db->query("select * from notes where id=:id",[ 'id'=>$_GET['id']])->fetchOrFail();
 
-if($note['user_id']!=$currentUserId){
-    abort(Response::FORBIDDEN);
-}
+
+
+
+// if($note['user_id']!=$currentUserId){
+//     abort(Response::FORBIDDEN);
+// }
+
+// Instead of above we do like this
+
+authorize($note['user_id']===$currentUserId);
 
 
 
