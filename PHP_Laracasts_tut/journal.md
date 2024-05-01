@@ -1,171 +1,127 @@
-I wanna clean up this junk code in note.php
+user will create brand new notes that are persisted in database.
+to create a new note, there should be a button, so user can click on it
+
+clicking on this button should take us where?where should we go? so in my notes.php where I list all my notes I would create a button to make new note.
+
+Let's add route where create note button should take us.
+
+`'/notes/create' => 'controllers/note-create.php';`
+
+before I add route in my routes.php file, Have a look at router.php
 
 ```php
-$currentUserId = 1;
-
-$note = $db->query("select * from notes where id=:id",[ 'id'=>$_GET['id']])->fetch();
-
-
-if(!$note){
-    abort(Response::NOT_FOUND);
-}
-
-if($note['user_id']!=$currentUserId){
-    abort(Response::FORBIDDEN);
-}
-```
-Look at this code first
-
-```php
-if(!$note){
-abort(Response::NOT_FOUND);
-}
-```
+<?php
+$uri = parse_url($_server['request_uri'])['path'];
 
 
-It would be better if we could combine it with fetch() method, wouldn't it be cool if we could say fetchOrAbort() and we don't need this if(!note){}
+$routes = [
+    '/'=>'controllers/index.php',
+    '/about'=>'controllers/about.php',
+    '/contact'=>'controllers/contact.php',
+    '/notes'=>'controllers/notes.php',
+    '/note'=>'controllers/note.php'
+];
 
-If I had that method available to me, I no longer had to write this if statement across the entire codebase .
-
-BUT the problem is we don't own that method, it is something PHP provides internally it is a PDO statement class.
-
-```php
-$note = $db->query('select * from notes where id = :id', [
-'id' => $_GET['id']
-])
-dd($note);
-```
-This is what you get, a PDO statement object
-> object(PDOStatement)#3 (1) { ["queryString"]=> string(34) "select * from notes where id = :id" }
-
-so this Database class looks like at the moment
-
-```php
-class Database{
-    public $connection;
-	public function __construct($config, $username='root',$password=""){
-
-		$dsn = "mysql:" . http_build_query($config, "", ';');
-		$this->connection = new PDO($dsn,$username,$password,[PDO::ATTR_DEFAULT_FETCH_MODE =>PDO::FETCH_ASSOC]);
-	}
-	public function query($query, $params=[]){
-
-	$statement = $this->connection->prepare($query);
-	$statement->execute($params);
-	return $statement;
-	}
+function urlis($uri){
+    return $_server['request_uri'] ===$uri;
     }
-```
-Notice query method returns $statement, which is PDOStatement object,instead of that I could just return the object itself ($this). so we could add some helper methods
 
-$statement is PDOStatement Object and you can only use What this object provides and it does provide fetch, but we want to modify it.
 
-so i modified my class Database like so
+    function routetocontroller($uri, $routes){
+        if(array_key_exists($uri, $routes)){
+            require $routes[$uri];
+        }else{
+           abort();
+        }
+        }
 
-```php
-class Database{
-    public funciton query($query, $params=[]){
-        // other code here
-
-        return $this;
+    function abort($code=404){
+        http_response_code($code);
+        require "views/{$code}.php";
+        die();
     }
+routetocontroller($uri, $routes);
+```
+First Thing I Notice is all our routes declaration are jumbled up against all our logic in router.php, If We Could Extract These routes in their own file , It Would be cleaner. So We don't have this junk every single time, when you need to add or tweak routes.
+
+
+So Create a New File routes.php and take all these routes out and move it into its own file.
+Instead of creating new variable, Why don't we just return directly just like we did in config.php file. see below.
+
+// routes.php
+return [
+    '/'=>'controllers/index.php',
+    '/about'=>'controllers/about.php',
+    '/contact'=>'controllers/contact.php',
+    '/notes'=>'controllers/notes.php',
+    '/note'=>'controllers/note.php'
+];
+
+So create this controller note-create.php and template(html) file view note-create.view.php
+
+// routes.php
+return [
+    '/'=>'controllers/index.php',
+    '/about'=>'controllers/about.php',
+    '/contact'=>'controllers/contact.php',
+    '/notes'=>'controllers/notes.php',
+    '/note'=>'controllers/note.php',
+    "/notes/create" => "controllers/note-create.php"
+];
+// router.php
+$routes = require('routes.php');
+
+so far what I have done is ..create a "new note" button underneath all notes, that button href is set to /notes/create and I created controller and view file. I extracted code from router.php to routes.php
+
+while implementing html and css for form and buttons, i learned button vs anchor tag, button does not have href. but we can style anchor just like button with css.
+
+
+Before I Start Working On forms, Why Don't We Have Little Conversations About naming conventions for routes.
+
+RESTful routing is a way to map URLs to specific resources and operations in a consistent, standardized manner. It uses HTTP methods to indicate what kind of action is being taken on a resource.
+
+RESTful routing follows a set of conventions for structuring URLs (routes) and associating HTTP methods with CRUD (Create, Read, Update, Delete) operations on resources.
+
+In note-create.view.php i created form so user can type message to send. I have textarea and I would emphasize on "name" attribute , you can't exclude it otherwise form data is not going to be part of query string. so make sure all of your form inputs include corresponding names.
+
+So that is get request, by default form will submit a get request. so clicking on different page links is also a get request, get me that page, get me that page.
+
+But It is not the only type of request you can make, there is many more. one of other is post request, so why don't we tweak the form and change It to method="post".
+
+so we submit the form again with some data, It refreshes and notice this time It did not include form data as part of query string.
+
+With the post request you are doing It in a sort of shadows a little bit as part of the message body and later we will learn how to inspect that.
+
+
+get requests are considered idempotent, It means no matter how many times you make the request whether I do It 1 time or 10,000 times, I am not doing anything destructive, I am still going to get same result. e.g clicking on page link will fetch me same page everytime i click.
+
+But that is not true for things like submitting the form, once I submit the form, It will persist in the database, so that means If I did It 10,000 times I will have as many records, that is not idempotent, so we should not use get request for this form submission.
+
+
+Now I have changed the method to post, I submitted the form where did it go?
+
+In the form I changed the request type to POST, that's why when you submit the form It is POST but It is GET when I visited the form page.
+
+// at this stage, we know we are responding to
+// the submission of form
+
+``php
+if($_SERVER['REQUEST_METHOD']==='POST'){
+    dd('you submitted the form');
 }
 ```
+Another thing is form action attribute , When you don't specify the action attribute in an HTML form, the form data is submitted to the same URL that rendered the form.
 
-Now when I call query, I am not returning that PDO statement, I am returning the same instance of database
-
-So right now everything is gonna blow up ofcourse, because now we are trying to call fetch on Database class and that does not exist.
-
-```php
-class Database{
-    public $connection;
-	public $statement;
-	public function __construct($config, $username='root',$password=""){
-
-		$dsn = "mysql:" . http_build_query($config, "", ';');
-		$this->connection = new PDO($dsn,$username,$password,[PDO::ATTR_DEFAULT_FETCH_MODE =>PDO::FETCH_ASSOC]);
-	}
-	public function query($query, $params=[]){
-
-	$this->statement = $this->connection->prepare($query);
-	$this->statement->execute($params);
-	return $this;
-	}
-    }
-```
-In the above code , what I have done is assigned PDOStatement object ($statement) to the class object, I think it is important step.
-
-Next Let's start by adding a fetch method, This is basically going to do what we had earlier, should return something like $statement->fetch
-
-```php
-public function fetch($query, $params=[]){
-		return $this->statement->fetch($query, $params);
-    }
-```
-at this stage, everything should work as it was before but the key difference is that now I own this method we are not using someone's API, we have wrapped in something that we own, I can name whatever I want
+In both cases, you can access the form data using the $_POST superglobal if the form method is POST, or the $_GET superglobal if the form method is GET.
 
 
-Next thing is add a method to handle this piece of code.
+Next thing is how do I get the information from the form? As It turns out we have new superglobal $_POST
 
-```php
-if(!$note){
-abort();
- }
-```
-Lets create another version of fetch method called fetchOrFail(), this will call fetch() method that we just created but then we are gonna do a check here
 
-```php
-$result = $this->fetch();
-if(!$result){
-    abort();
-}
-return $result;
-// // $result is generic name because it could be 'note' like in this case
-// or it could be anything e.g 'user'
-```
-We have to update our notes.php to no longer call fetchAll() method. Let's call it simply get()
-```php
-public function get(){
-  return $this->statement->fetchAll();
-}
-```
-that's a very cool refactor.
+Think about it, We added a form and we figured out how we can respond to the submission of form
 
-Now Let's worry about this
+We learned how we can grab all of the data or the attributes of the form
 
-```php
-if($note['user_id']!= $currentUserId){
-abort(Response::FORBIDDEN);
-}
-```
+So the next step would be perform any validations that is necessary
 
-This code authorises that currentUser created this note. but the keyword authorises doesn't exist here, maybe it should..
-
-for this piece of code, we can just create a helper function 'authorize' that I will write in functions.php file.
-
-```php
-function authorize($condition){
-    if(!$condition){
-        abort(Response::FORBIDDEN);
-    }
-}
-
-// make it more reusable and add the second parameter
-function authorize($condition, $status = Response::FORBIDDEN){
-if(!$condition){
-  abort($status);
-}
-}
-// call it like this in note.php
-authorize($note['user_id']===$currentUserId);
-// not != $currentUserId
-```
-
-Now you might be thinking if we are performing authroization isn't 403 always proper status code?
-Answer is YES and NO.
-There will be situations where even though the user may not be authorized to view particular page or resource, you don't want to necessarily indicate to them, that provides the information to the state of database.
-It gives them information "oh this record does infact exist" so maybe I could do something malicious knowing that.
-Another example might be If you need to reset your password, you type in your password and it returns we couldn't find that email address
-If you think about it, it reveals the information about your database and which you might not want to in certain situations. So in nutshell It could be useful to allow ourselves to override default status code.
-
-We talked about some nitty gritty details and refactoring, may be it was not fun for you as we didn't see anything flashy on the page, but we will do it soon!
+and then persist it or save it to the database.
