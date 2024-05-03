@@ -18,7 +18,7 @@ require 'partials/banner.php';
     <ul class="list-disc pl-5">
       <?php foreach ($notes as $note): ?>
         <li class="mb-2 note-item">
-          <a href="/note?id=<?= $note['id'] ?>" class="text-blue-500 hover:underline note-link"><?= $note['body'] ?></a>
+          <a href="/note?id=<?= $note['id'] ?>" class="text-blue-500 hover:underline note-link"><?= htmlspecialchars($note['body']) ?></a>
         </li>
       <?php endforeach; ?>
     </ul>

@@ -10,7 +10,7 @@ require "partials/banner.php";
     <a href="/notes" class="text-blue-500 underline">Go Back...</a>
     </p>
     <p>
-    <?= $note['body'] ?>
+    <?= htmlspecialchars($note['body']) ?>
     </p>
     </div>
 </main>
