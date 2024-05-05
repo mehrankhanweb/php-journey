@@ -14,3 +14,7 @@ A repository to track my journey in learning PHP. This repository contains code 
 - [Refactoring Database Class for Enhanced Flexibility](https://github.com/mehrankhanweb/php-journey/wiki/Refactoring-the-PHP-Database-Class-for-Enhanced-Flexibility-and-Robustness)
 
 - [Create new note & naming convention & form data handling](https://github.com/mehrankhanweb/php-journey/wiki/Create-new-note-&-restful-routing-convention-&-form-data-handling)
+
+- [Preventing XSS and SQL Injection Data Validation](https://github.com/mehrankhanweb/php-journey/wiki/Preventing-XSS-and-SQL-Injection-(Data-Validation))
+
+- [Validator Class](https://github.com/mehrankhanweb/php-journey/wiki/Validator-Class)
