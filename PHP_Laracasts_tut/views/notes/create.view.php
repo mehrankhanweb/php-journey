@@ -1,7 +1,7 @@
 <?php
-require "partials/head.php";
-require "partials/nav.php";
-require "partials/banner.php";
+require "views/partials/head.php";
+require "views/partials/nav.php";
+require "views/partials/banner.php";
 ?>
 
 <main class="flex flex-col items-center w-full pt-10 bg-gray-100 dark:bg-gray-900">
@@ -20,5 +20,5 @@ require "partials/banner.php";
 </main>
 
 <?php
-require "partials/footer.php";
+require "views/partials/footer.php";
 ?>
