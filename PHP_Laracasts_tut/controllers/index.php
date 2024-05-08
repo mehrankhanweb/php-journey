@@ -1,6 +1,5 @@
 <?php
 
-$heading = "Home";
 
 
 
@@ -9,4 +8,4 @@ $heading = "Home";
 
 
 
-view('index.view.php');
+view('index.view.php',['heading'=>'Home']);
