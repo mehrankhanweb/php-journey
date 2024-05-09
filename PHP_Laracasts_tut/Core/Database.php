@@ -1,4 +1,8 @@
 <?php
+
+namespace Core;
+use PDO;
+use Response;
 class Database{
     public $connection;
 	public $statement;
