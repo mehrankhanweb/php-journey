@@ -1,7 +1,7 @@
 <?php
-require "partials/head.php";
-require "partials/nav.php";
-// require "partials/banner.php"; (not required)
+require base_path("views/partials/head.php");
+require base_path("views/partials/nav.php");
+
 ?>
 
 <!-- component -->
@@ -20,5 +20,5 @@ require "partials/nav.php";
 </div>
 
 <?php
-require 'partials/footer.php';
+require base_path('views/partials/footer.php');
 ?>
