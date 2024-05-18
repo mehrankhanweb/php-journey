@@ -13,9 +13,19 @@ require base_path('views/partials/banner.php');
     <?= htmlspecialchars($note['body']) ?>
     </p>
     </div>
+
+<div class="mt-8">
+            <form method="POST">
+                <input type="hidden" name="id" value="<?= $note['id'] ?>">
+                <button class="mx-40 px-2 py-2 text-xs font-small text-white bg-red-600 rounded-lg focus:ring-4 focus:ring-red-200 hover:bg-red-700">
+                    Delete Note
+                </button>
+            </form>
+        </div>
 </main>
 
 <?php
 require base_path('views/partials/footer.php');
+
 ?>
 
